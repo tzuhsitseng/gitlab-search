@@ -13,7 +13,7 @@ If you cannot use the advanced search, a premium feature, I hope it's helpful fo
 ## Usage
 ```bash
 $ make build
-$ ./bin/gs search --url https://gitlab.com --token your_pat --keyword your_keyword
+$ ./bin/gs search --url https://gitlab.com --token your_pat --keyword your_keyword --groups 100,101
 
 $ ./bin/gs search --help
 Perform a thorough search of your GitLab projects
@@ -22,6 +22,7 @@ Usage:
   gs search [flags]
 
 Flags:
+  -g, --groups string    specific groups are separated by a comma
   -h, --help             help for search
   -k, --keyword string   search keyword
   -t, --token string     personal access token
