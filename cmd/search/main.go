@@ -22,6 +22,7 @@ func main() {
 	var url string
 	var token string
 	var keyword string
+	var groups string
 
 	searchCmd := &cobra.Command{
 		Use:   "search",
@@ -31,6 +32,7 @@ func main() {
 			fmt.Printf("Your url: [%s]\n", url)
 			fmt.Printf("Your token: [%s]\n", token)
 			fmt.Printf("Your keyword: [%s]\n", keyword)
+			fmt.Printf("Your groups: [%s]\n", groups)
 
 			svc, err := services.NewGitLabService(url, token)
 			if err != nil {
@@ -38,16 +40,18 @@ func main() {
 			}
 
 			// get groups
-			groupIDs, err := getGroups(svc)
+			groupIDs, err := getGroups(svc, groups)
 			if err != nil {
 				log.Fatalf("failed to get groups: %v", err)
 			}
+			fmt.Printf("There are [%d] groups\n", len(groupIDs))
 
 			// get projects
 			projects, err := getProjects(svc, groupIDs)
 			if err != nil {
 				log.Fatalf("failed to get projects: %v", err)
 			}
+			fmt.Printf("There are [%d] projects\n\n", len(projects))
 
 			// do search
 			for _, p := range projects {
@@ -64,6 +68,7 @@ func main() {
 	searchCmd.Flags().StringVarP(&url, "url", "u", "", "gitlab url")
 	searchCmd.Flags().StringVarP(&token, "token", "t", "", "personal access token")
 	searchCmd.Flags().StringVarP(&keyword, "keyword", "k", "", "search keyword")
+	searchCmd.Flags().StringVarP(&groups, "groups", "g", "", "specific groups are separated by a comma")
 
 	rootCmd := &cobra.Command{Use: "gs"}
 	rootCmd.AddCommand(searchCmd)
@@ -92,7 +97,7 @@ func printResults(projectName string, blobs []*services.Blob) {
 			fmt.Printf("```\n\n")
 		}
 	} else {
-		fmt.Printf("🔍 Project [%s] has no code results\n\n", projectName)
+		fmt.Printf("🔍 Project [%s] has no results\n\n", projectName)
 	}
 }
 
@@ -105,15 +110,23 @@ func getProjects(svc services.GitLabSvc, groupIDs []int) ([]*services.Project, e
 		}
 		res = append(res, projects...)
 	}
-	fmt.Printf("There are [%d] projects\n", len(res))
 	return res, nil
 }
 
-func getGroups(svc services.GitLabSvc) ([]int, error) {
-	groupIDs, err := svc.GetGroups()
-	if err != nil {
-		return nil, err
+func getGroups(svc services.GitLabSvc, groups string) ([]int, error) {
+	if len(groups) == 0 {
+		return svc.GetGroups()
 	}
-	fmt.Printf("There are [%d] groups\n", len(groupIDs))
-	return groupIDs, nil
+
+	groupStrIDs := strings.Split(groups, ",")
+	result := make([]int, 0, len(groupStrIDs))
+
+	for _, v := range groupStrIDs {
+		groupID, err := strconv.Atoi(v)
+		if err != nil {
+			return nil, err
+		}
+		result = append(result, groupID)
+	}
+	return result, nil
 }
